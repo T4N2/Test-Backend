@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Transaksi - Sales App</title>
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {
+                font-family: system-ui, Segoe UI, Roboto, Arial;
+                margin: 16px;
+                background: #f7f9fb;
+            }
+
+            .container {
+                max-width: 1100px;
+                margin: 0 auto;
+                background: #fff;
+                padding: 18px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            }
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            h1 {
+                font-size: 20px;
+                margin: 0;
+            }
+            .flex {
+                display: flex;
+                gap: 12px;
+            }
+            .card {
+                border: 1px solid #e6e9ee;
+                padding: 12px;
+                border-radius: 6px;
+                background: #fff;
+            }
+            .products {
+                display: grid;
+                grid-template-columns: 1fr 380px;
+                gap: 12px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th,
+            td {
+                padding: 8px;
+                border-bottom: 1px solid #eee;
+                text-align: left;
+            }
+            button {
+                cursor: pointer;
+            }
+            input[type="number"] {
+                width: 150px;
+            }
+            .muted {
+                color: #666;
+                font-size: 13px;
+            }
+            .success {
+                color: green;
+            }
+            .error {
+                color: #b00020;
+            }
+            .toolbar {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+            /* simple pagination styles */
+            .pagination {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+            }
+            .pagination button {
+                padding: 6px 8px;
+                border-radius: 6px;
+                border: 1px solid #e6e9ee;
+                background: #fff;
+            }
+            .pagination button[disabled] {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            .pagination .active {
+                background: #eef2ff;
+                border-color: #cfe0ff;
+                color: #2563eb;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1 class="text-2xl font-semibold">Transaksi</h1>
+                <div class="toolbar flex items-center gap-3">
+                    <div id="userStatus" class="muted text-sm">Belum login</div>
+                    <button
+                        id="btnLogout"
+                        style="display: none"
+                        class="text-sm text-gray-600 hover:text-gray-800"
+                    >
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <section class="card" style="margin-bottom: 12px">
+                <h3 class="text-lg font-medium mb-2">
+                    Login (untuk mengakses API)
+                </h3>
+                <form id="loginForm" class="flex items-center gap-2">
+                    <input
+                        id="username"
+                        placeholder="username"
+                        value="admin"
+                        required
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="password"
+                        type="password"
+                        placeholder="password"
+                        value="password"
+                        required
+                        class="border rounded px-2 py-1"
+                    />
+                    <button
+                        type="submit"
+                        class="bg-blue-600 text-black rounded px-3 py-1"
+                    >
+                        Login
+                    </button>
+                    <span id="loginMsg" class="muted ml-3"></span>
+                </form>
+            </section>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-4">
+                <button
+                    id="tabDashboard"
+                    class="card px-4 py-2 bg-gray-100 hover:bg-gray-200"
+                >
+                    Dashboard
+                </button>
+                <button
+                    id="tabMaster"
+                    class="card px-4 py-2 bg-gray-100 hover:bg-gray-200"
+                >
+                    Master Data
+                </button>
+                <button
+                    id="tabTransaksi"
+                    class="card px-4 py-2 bg-gray-100 hover:bg-gray-200"
+                >
+                    Transaksi
+                </button>
+                <button
+                    id="tabSales"
+                    class="card px-4 py-2 bg-gray-100 hover:bg-gray-200"
+                >
+                    Sales
+                </button>
+            </div>
+
+            <!-- Dashboard: top 5 products -->
+            <section
+                id="sectionDashboard"
+                class="card"
+                style="display: none; margin-bottom: 12px"
+            >
+                <h3 class="text-lg font-medium mb-2">
+                    Dashboard - 5 Produk Terbanyak
+                </h3>
+                <div id="dashboardContainer">
+                    <table
+                        id="topProductsTable"
+                        class="min-w-full divide-y divide-gray-100"
+                    >
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Kode</th>
+                                <th>Nama</th>
+                                <th>Terjual</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Master Data (CRUD) -->
+            <section
+                id="sectionMaster"
+                class="card"
+                style="display: none; margin-bottom: 12px"
+            >
+                <h3 class="text-lg font-medium mb-2">Master Data Produk</h3>
+                <form
+                    id="productForm"
+                    style="
+                        display: flex;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                        margin-bottom: 8px;
+                    "
+                >
+                    <input
+                        id="p_code"
+                        placeholder="Kode"
+                        required
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="p_name"
+                        placeholder="Nama produk"
+                        required
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="p_price"
+                        type="number"
+                        placeholder="Harga"
+                        required
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="p_stock"
+                        type="number"
+                        placeholder="Stok"
+                        required
+                        class="border rounded px-2 py-1"
+                    />
+                    <button
+                        id="btnSaveProduct"
+                        type="submit"
+                        class="bg-green-600 text-black rounded px-3 py-1"
+                    >
+                        Simpan
+                    </button>
+                    <button
+                        id="btnCancelEdit"
+                        type="button"
+                        style="display: none"
+                        class="bg-gray-100 rounded px-3 py-1"
+                    >
+                        Batal
+                    </button>
+                </form>
+                <div id="masterMsg" class="muted"></div>
+                <div>
+                    <table
+                        id="masterProductsTable"
+                        class="min-w-full divide-y divide-gray-100"
+                    >
+                        <thead>
+                            <tr>
+                                <th>Kode</th>
+                                <th>Nama</th>
+                                <th>Harga</th>
+                                <th>Stok</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div
+                        id="masterPagination"
+                        style="
+                            margin-bottom: 8px;
+                            display: flex;
+                            gap: 8px;
+                            align-items: center;
+                        "
+                    ></div>
+                </div>
+            </section>
+
+            <!-- Transaksi form -->
+            <section id="sectionTransaksi" class="card hidden mb-4">
+                <h3 class="text-lg font-medium mb-4">Transaksi Penjualan</h3>
+
+                <form id="transaksiForm" class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label
+                            for="t_product"
+                            class="block text-sm font-medium text-slate-700 mb-2"
+                            >Produk</label
+                        >
+                        <select
+                            id="t_product"
+                            class="block w-full rounded-md border px-3 py-2"
+                            aria-label="Pilih produk"
+                        ></select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label
+                                for="t_qty"
+                                class="block text-sm font-medium text-slate-700 mb-2"
+                                >Quantity</label
+                            >
+                            <input
+                                id="t_qty"
+                                type="number"
+                                min="1"
+                                value="1"
+                                class="block w-full rounded-md border px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                for="t_price"
+                                class="block text-sm font-medium text-slate-700 mb-2"
+                                >Price</label
+                            >
+                            <input
+                                id="t_price"
+                                type="number"
+                                min="0"
+                                class="block w-full rounded-md border px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                for="t_subtotal"
+                                class="block text-sm font-medium text-slate-700 mb-2"
+                                >Subtotal</label
+                            >
+                            <input
+                                id="t_subtotal"
+                                type="text"
+                                readonly
+                                class="block w-full rounded-md border px-3 py-2 bg-slate-50"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 mt-2">
+                        <button
+                            id="btnClearTransaksi"
+                            type="button"
+                            class="inline-flex items-center px-6 py-2 rounded-md bg-gray-100 text-slate-700 hover:bg-gray-200"
+                        >
+                            Clear
+                        </button>
+                        <button
+                            id="btnSaveTransaksi"
+                            type="submit"
+                            class="inline-flex items-center px-6 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                        >
+                            Save
+                        </button>
+                    </div>
+
+                    <div id="transaksiMsg" class="text-sm text-slate-600"></div>
+                </form>
+            </section>
+
+            <!-- Sales list & edit -->
+            <section
+                id="sectionSales"
+                class="card"
+                style="display: none; margin-bottom: 12px"
+            >
+                <form
+                    id="saleEditForm"
+                    style="
+                        display: flex;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                        margin-top: 8px;
+                    "
+                >
+                    <input id="s_id" type="hidden" />
+                    <input
+                        id="s_ref"
+                        placeholder="Reference"
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="s_date"
+                        type="datetime-local"
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="s_product"
+                        placeholder="Product code"
+                        disabled
+                        class="border rounded px-2 py-1 bg-gray-50"
+                    />
+                    <input
+                        id="s_qty"
+                        type="number"
+                        min="1"
+                        placeholder="Qty"
+                        class="border rounded px-2 py-1"
+                    />
+                    <input
+                        id="s_price"
+                        type="number"
+                        min="0"
+                        placeholder="Price"
+                        class="border rounded px-2 py-1"
+                    />
+                    <button
+                        id="btnSaveSale"
+                        type="submit"
+                        class="bg-amber-600 text-black rounded px-3 py-1"
+                    >
+                        Save
+                    </button>
+                    <button
+                        id="btnCancelSale"
+                        type="button"
+                        class="bg-gray-100 rounded px-3 py-1"
+                    >
+                        Cancel
+                    </button>
+                    <div
+                        id="salesMsg"
+                        class="muted"
+                        style="flex-basis: 100%"
+                    ></div>
+                </form>
+                <h3>Data Sales</h3>
+                <div>
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Reference</th>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div
+                        id="salesPagination"
+                        style="
+                            margin-top: 8px;
+                            display: flex;
+                            gap: 8px;
+                            align-items: center;
+                        "
+                    ></div>
+                </div>
+                <hr />
+            </section>
+
+            <footer style="margin-top: 12px" class="muted">
+                Afiat Lintang Winasis.
+            </footer>
+        </div>
+
+        <script>
+            const API_BASE = "http://localhost:3000/api";
+
+            // Utility
+            const el = (id) => document.getElementById(id);
+            const q = (sel) => document.querySelector(sel);
+            const fmt = (n) => Number(n).toLocaleString("id-ID");
+
+            function humanDate(dt) {
+                if (!dt) return "";
+
+                let s = String(dt).trim();
+
+                if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(s)) {
+                    s = s.replace(" ", "T");
+                }
+
+                s = s.replace(/Z$/, "");
+                const d = new Date(s);
+                if (isNaN(d)) return dt;
+                try {
+                    return d.toLocaleString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
+                } catch (e) {
+                    return d.toString();
+                }
+            }
+
+            function applyTailwindClasses() {
+                try {
+                    const container = q(".container");
+                    if (container)
+                        container.classList.add(
+                            "max-w-5xl",
+                            "mx-auto",
+                            "bg-white",
+                            "p-6",
+                            "rounded-lg",
+                            "shadow"
+                        );
+                    const header = q("header");
+                    if (header)
+                        header.classList.add(
+                            "flex",
+                            "justify-between",
+                            "items-center",
+                            "mb-3"
+                        );
+                    qAll = (sel) => Array.from(document.querySelectorAll(sel));
+                    qAll(".card").forEach((elm) =>
+                        elm.classList.add(
+                            "p-4",
+                            "border",
+                            "rounded",
+                            "bg-white"
+                        )
+                    );
+                    qAll("button").forEach((b) =>
+                        b.classList.add(
+                            "px-3",
+                            "py-1",
+                            "bg-white",
+                            "border",
+                            "rounded",
+                            "hover:bg-gray-50"
+                        )
+                    );
+                    qAll("table").forEach((t) =>
+                        t.classList.add("min-w-full", "text-sm")
+                    );
+                    qAll("th").forEach((th) =>
+                        th.classList.add("text-left", "font-medium", "pb-2")
+                    );
+                    qAll("td").forEach((td) => td.classList.add("py-2"));
+                } catch (e) {
+                    /* noop */
+                }
+            }
+
+            // Auth / state
+            let token = localStorage.getItem("token") || null;
+            let productsAll = []; // full product list used for transaksi select & lookup
+            let pageProducts = []; // products for current master page
+            let editingProductId = null; // for master edit
+
+            // Master pagination state
+            let currentProductPage = 1;
+            const defaultProductPageSize = 5;
+            let productPageSize = defaultProductPageSize;
+            let productTotal = null;
+
+            // Sales pagination state
+            let currentSalesPage = 1;
+            const defaultSalesPageSize = 5;
+            let salesPageSize = defaultSalesPageSize;
+            let salesTotal = null;
+
+            // Elements
+            const loginForm = el("loginForm");
+            const loginMsg = el("loginMsg");
+            const userStatus = el("userStatus");
+            const btnLogout = el("btnLogout");
+
+            const tabDashboard = el("tabDashboard");
+            const tabMaster = el("tabMaster");
+            const tabTransaksi = el("tabTransaksi");
+            const tabSales = el("tabSales");
+            const sectionDashboard = el("sectionDashboard");
+            const sectionMaster = el("sectionMaster");
+            const sectionTransaksi = el("sectionTransaksi");
+            const sectionSales = el("sectionSales");
+
+            // Master elements
+            const productForm = el("productForm");
+            const p_code = el("p_code");
+            const p_name = el("p_name");
+            const p_price = el("p_price");
+            const p_stock = el("p_stock");
+            const btnSaveProduct = el("btnSaveProduct");
+            const btnCancelEdit = el("btnCancelEdit");
+            const masterProductsTableBody = q("#masterProductsTable tbody");
+            const masterMsg = el("masterMsg");
+            const masterPagination = el("masterPagination");
+
+            // Transaksi elements
+            const t_product = el("t_product");
+            const t_qty = el("t_qty");
+            const t_price = el("t_price");
+            const t_subtotal = el("t_subtotal");
+            const btnSaveTransaksi = el("btnSaveTransaksi");
+            const transaksiForm = el("transaksiForm");
+            const btnClearTransaksi = el("btnClearTransaksi");
+            const transaksiMsg = el("transaksiMsg");
+
+            // Dashboard elements
+            const topProductsTableBody = q("#topProductsTable tbody");
+            // Sales elements
+            const salesTableBody = q("#salesTable tbody");
+            const salesPagination = el("salesPagination");
+            const saleEditForm = el("saleEditForm");
+            const s_id = el("s_id");
+            const s_ref = el("s_ref");
+            const s_date = el("s_date");
+            const s_product = el("s_product");
+            const s_qty = el("s_qty");
+            const s_price = el("s_price");
+            const btnSaveSale = el("btnSaveSale");
+            const btnCancelSale = el("btnCancelSale");
+            const salesMsg = el("salesMsg");
+
+            function setAuth(t) {
+                token = t;
+                if (t) {
+                    localStorage.setItem("token", t);
+                    userStatus.textContent = "Logged in";
+                    btnLogout.style.display = "inline-block";
+                } else {
+                    localStorage.removeItem("token");
+                    userStatus.textContent = "Belum login";
+                    btnLogout.style.display = "none";
+                }
+            }
+
+            async function apiFetch(path, opts = {}) {
+                const headers = opts.headers || {};
+                if (
+                    !headers["Content-Type"] &&
+                    !(opts.body instanceof FormData)
+                ) {
+                    headers["Content-Type"] = "application/json";
+                }
+                if (token) headers["Authorization"] = "Bearer " + token;
+                const res = await fetch(API_BASE + path, { ...opts, headers });
+                const text = await res.text();
+                try {
+                    return {
+                        ok: res.ok,
+                        status: res.status,
+                        data: JSON.parse(text),
+                    };
+                } catch (e) {
+                    return { ok: res.ok, status: res.status, data: text };
+                }
+            }
+
+            // --- Login handling ---
+            loginForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                loginMsg.textContent = "Logging in...";
+                const u = el("username").value;
+                const p = el("password").value;
+                try {
+                    const r = await apiFetch("/auth/login", {
+                        method: "POST",
+                        body: JSON.stringify({ username: u, password: p }),
+                    });
+                    if (!r.ok) {
+                        loginMsg.textContent =
+                            "Login gagal: " +
+                            (r.data && r.data.message
+                                ? r.data.message
+                                : r.status);
+                        return;
+                    }
+                    setAuth(r.data.token);
+                    loginMsg.textContent = "Berhasil";
+                    await loadAll();
+                } catch (err) {
+                    loginMsg.textContent = "Error: " + err.message;
+                }
+            });
+
+            btnLogout.addEventListener("click", () => {
+                setAuth(null);
+                // reset UI
+                productsAll = [];
+                renderMasterProducts([]);
+                renderTopProducts([]);
+                populateProductSelect();
+                showSection("dashboard");
+            });
+
+            // --- Tabs ---
+            function showSection(name) {
+                sectionDashboard.style.display =
+                    name === "dashboard" ? "block" : "none";
+                sectionMaster.style.display =
+                    name === "master" ? "block" : "none";
+                sectionTransaksi.style.display =
+                    name === "transaksi" ? "block" : "none";
+                if (typeof sectionSales !== "undefined" && sectionSales) {
+                    sectionSales.style.display =
+                        name === "sales" ? "block" : "none";
+                }
+            }
+            tabDashboard.addEventListener("click", () =>
+                showSection("dashboard")
+            );
+            tabMaster.addEventListener("click", () => {
+                showSection("master");
+                loadMasterProducts(1, productPageSize);
+            });
+            tabTransaksi.addEventListener("click", () =>
+                showSection("transaksi")
+            );
+            if (tabSales) {
+                tabSales.addEventListener("click", () => {
+                    showSection("sales");
+                    loadSales(1, salesPageSize);
+                });
+            }
+
+            // --- Load all data after login ---
+            async function loadAll() {
+                await Promise.all([loadTopProducts(), loadProductsForSelect()]);
+                await loadMasterProducts(1, productPageSize);
+                showSection("dashboard");
+            }
+
+            // --- Dashboard ---
+            async function loadTopProducts() {
+                topProductsTableBody.innerHTML =
+                    '<tr><td colspan="4">Memuat...</td></tr>';
+                const r = await apiFetch("/sales/top-products");
+                if (!r.ok) {
+                    topProductsTableBody.innerHTML =
+                        '<tr><td colspan="4" class="muted">Gagal memuat: ' +
+                        (r.data && r.data.message ? r.data.message : r.status) +
+                        "</td></tr>";
+                    return;
+                }
+                const list =
+                    r.data && Array.isArray(r.data)
+                        ? r.data
+                        : r.data.data || [];
+                renderTopProducts(list.slice(0, 5));
+            }
+            function renderTopProducts(list) {
+                topProductsTableBody.innerHTML = "";
+                if (!list || list.length === 0) {
+                    topProductsTableBody.innerHTML =
+                        '<tr><td colspan="4" class="muted">Tidak ada data</td></tr>';
+                    return;
+                }
+                let i = 1;
+                for (const row of list) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${i++}</td><td>${
+                        row.product_code || row.productCode || ""
+                    }</td><td>${
+                        row.product_name || row.productName || ""
+                    }</td><td>${
+                        row.total_sold || row.total || row.qty || 0
+                    }</td>`;
+                    topProductsTableBody.appendChild(tr);
+                }
+            }
+
+            // --- Products for transaksi select (full list) ---
+            async function loadProductsForSelect() {
+                // load many items so transaksi select has all products
+                const r = await apiFetch("/products?pageSize=1000");
+                if (!r.ok) {
+                    productsAll = [];
+                    populateProductSelect();
+                    return;
+                }
+                // handle different response shapes
+                let list = [];
+                if (r.data) {
+                    if (Array.isArray(r.data)) list = r.data;
+                    else if (Array.isArray(r.data.data)) list = r.data.data;
+                    else {
+                        const arr = Object.values(r.data).find((v) =>
+                            Array.isArray(v)
+                        );
+                        if (arr) list = arr;
+                    }
+                }
+                productsAll = list || [];
+                populateProductSelect();
+            }
+
+            function populateProductSelect() {
+                t_product.innerHTML = "";
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.textContent = "-- pilih produk --";
+                t_product.appendChild(opt);
+                for (const p of productsAll) {
+                    const o = document.createElement("option");
+                    o.value = p.product_code;
+                    o.textContent = p.product_code + " - " + p.product_name;
+                    o.dataset.price = p.price;
+                    o.dataset.stock = p.stock;
+                    t_product.appendChild(o);
+                }
+            }
+
+            // --- Master data (paginated) ---
+            async function loadMasterProducts(
+                page = 1,
+                pageSize = defaultProductPageSize
+            ) {
+                if (!masterProductsTableBody) return;
+                currentProductPage = Number(page) || 1;
+                productPageSize = Number(pageSize) || defaultProductPageSize;
+                masterProductsTableBody.innerHTML =
+                    '<tr><td colspan="5">Memuat...</td></tr>';
+                const r = await apiFetch(
+                    `/products?page=${currentProductPage}&pageSize=${productPageSize}`
+                );
+                if (!r.ok) {
+                    masterProductsTableBody.innerHTML =
+                        '<tr><td colspan="5" class="muted">Gagal memuat: ' +
+                        (r.data && r.data.message ? r.data.message : r.status) +
+                        "</td></tr>";
+                    renderProductSimplePagination(
+                        0,
+                        currentProductPage,
+                        productPageSize
+                    );
+                    return;
+                }
+
+                // extract list and total (support multiple API shapes)
+                let list = [];
+                let total = null;
+                if (r.data) {
+                    if (Array.isArray(r.data)) {
+                        list = r.data;
+                    } else if (Array.isArray(r.data.data)) {
+                        list = r.data.data;
+                        if (typeof r.data.total === "number")
+                            total = r.data.total;
+                        if (
+                            r.data.meta &&
+                            typeof r.data.meta.total === "number"
+                        )
+                            total = r.data.meta.total;
+                        if (
+                            r.data.pagination &&
+                            typeof r.data.pagination.total === "number"
+                        )
+                            total = r.data.pagination.total;
+                    } else if (r.data.items && Array.isArray(r.data.items)) {
+                        list = r.data.items;
+                        if (typeof r.data.total === "number")
+                            total = r.data.total;
+                        if (typeof r.data.totalItems === "number")
+                            total = r.data.totalItems;
+                    } else {
+                        // fallback: try to find array in object
+                        const arr = Object.values(r.data).find((v) =>
+                            Array.isArray(v)
+                        );
+                        if (arr) list = arr;
+                        else if (r.data.data && !Array.isArray(r.data.data))
+                            list = [r.data.data];
+                    }
+                }
+
+                // if page returns empty and page>1, try to load previous page
+                if ((!list || list.length === 0) && currentProductPage > 1) {
+                    await loadMasterProducts(
+                        currentProductPage - 1,
+                        productPageSize
+                    );
+                    return;
+                }
+
+                pageProducts = list || [];
+                productTotal = typeof total === "number" ? total : null;
+
+                renderMasterProducts(pageProducts);
+                if (productTotal !== null) {
+                    renderProductPagination(
+                        productTotal,
+                        currentProductPage,
+                        productPageSize
+                    );
+                } else {
+                    renderProductSimplePagination(
+                        pageProducts.length,
+                        currentProductPage,
+                        productPageSize
+                    );
+                }
+            }
+
+            function renderMasterProducts(list) {
+                masterProductsTableBody.innerHTML = "";
+                if (!list || list.length === 0) {
+                    masterProductsTableBody.innerHTML =
+                        '<tr><td colspan="5" class="muted">Tidak ada produk</td></tr>';
+                    return;
+                }
+                for (const p of list) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${p.product_code}</td><td>${
+                        p.product_name
+                    }</td><td>Rp ${fmt(p.price)}</td><td>${
+                        p.stock
+                    }</td><td><button data-id="${p.id_product}" data-code="${
+                        p.product_code
+                    }" class="bg-green-500 text-black rounded px-3 py-1 edit">Edit</button> <button data-id="${
+                        p.id_product
+                    }" class="bg-red-500 text-white rounded px-3 py-1 del">Hapus</button></td>`;
+                    masterProductsTableBody.appendChild(tr);
+                }
+                // attach handlers
+                masterProductsTableBody
+                    .querySelectorAll(".edit")
+                    .forEach((btn) => {
+                        btn.addEventListener("click", () => {
+                            const id = btn.getAttribute("data-id");
+                            const p = (pageProducts || []).find(
+                                (x) => String(x.id_product) === String(id)
+                            );
+                            if (!p) return;
+                            editingProductId = id;
+                            p_code.value = p.product_code;
+                            p_name.value = p.product_name;
+                            p_price.value = p.price;
+                            p_stock.value = p.stock;
+                            p_code.disabled = true;
+                            btnCancelEdit.style.display = "inline-block";
+                        });
+                    });
+                masterProductsTableBody
+                    .querySelectorAll(".del")
+                    .forEach((btn) => {
+                        btn.addEventListener("click", async () => {
+                            const id = btn.getAttribute("data-id");
+                            if (!confirm("Hapus produk?")) return;
+                            const r = await apiFetch("/products/" + id, {
+                                method: "DELETE",
+                            });
+                            if (!r.ok) {
+                                masterMsg.textContent =
+                                    "Hapus gagal: " +
+                                    (r.data && r.data.message
+                                        ? r.data.message
+                                        : r.status);
+                                return;
+                            }
+                            masterMsg.textContent = "Terhapus";
+                            await loadMasterProducts(
+                                currentProductPage,
+                                productPageSize
+                            );
+                            await loadProductsForSelect();
+                        });
+                    });
+            }
+
+            function renderProductPagination(total, page, pageSize) {
+                if (!masterPagination) return;
+                masterPagination.innerHTML = "";
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                const root = document.createElement("div");
+                root.className = "pagination";
+
+                const makeBtn = (
+                    label,
+                    p,
+                    disabled = false,
+                    extraClass = ""
+                ) => {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.textContent = label;
+                    if (disabled) b.disabled = true;
+                    if (extraClass) b.classList.add(extraClass);
+                    b.addEventListener("click", () => {
+                        loadMasterProducts(p, pageSize);
+                    });
+                    return b;
+                };
+
+                // Prev
+                root.appendChild(
+                    makeBtn("« Prev", Math.max(1, page - 1), page === 1)
+                );
+
+                if (totalPages <= 10) {
+                    for (let i = 1; i <= totalPages; i++) {
+                        const btn = makeBtn(
+                            String(i),
+                            i,
+                            false,
+                            i === page ? "active" : ""
+                        );
+                        if (i === page) btn.classList.add("active");
+                        root.appendChild(btn);
+                    }
+                } else {
+                    root.appendChild(
+                        makeBtn("1", 1, false, page === 1 ? "active" : "")
+                    );
+                    if (page > 4) {
+                        const dots = document.createElement("span");
+                        dots.textContent = "...";
+                        root.appendChild(dots);
+                    }
+                    const start = Math.max(2, page - 2);
+                    const end = Math.min(totalPages - 1, page + 2);
+                    for (let i = start; i <= end; i++) {
+                        const btn = makeBtn(
+                            String(i),
+                            i,
+                            false,
+                            i === page ? "active" : ""
+                        );
+                        if (i === page) btn.classList.add("active");
+                        root.appendChild(btn);
+                    }
+                    if (page < totalPages - 3) {
+                        const dots2 = document.createElement("span");
+                        dots2.textContent = "...";
+                        root.appendChild(dots2);
+                    }
+                    root.appendChild(
+                        makeBtn(
+                            String(totalPages),
+                            totalPages,
+                            false,
+                            page === totalPages ? "active" : ""
+                        )
+                    );
+                }
+
+                // Next
+                root.appendChild(
+                    makeBtn(
+                        "Next »",
+                        Math.min(totalPages, page + 1),
+                        page === totalPages
+                    )
+                );
+
+                // info
+                const info = document.createElement("span");
+                info.className = "muted";
+                info.style.marginLeft = "10px";
+                info.textContent = `Halaman ${page} dari ${totalPages} — total ${total} produk`;
+                masterPagination.appendChild(root);
+                masterPagination.appendChild(info);
+            }
+
+            function renderProductSimplePagination(
+                returnedCount,
+                page,
+                pageSize
+            ) {
+                if (!masterPagination) return;
+                masterPagination.innerHTML = "";
+                const root = document.createElement("div");
+                root.className = "pagination";
+                const prev = document.createElement("button");
+                prev.type = "button";
+                prev.textContent = "« Prev";
+                prev.disabled = page <= 1;
+                prev.addEventListener("click", () =>
+                    loadMasterProducts(Math.max(1, page - 1), pageSize)
+                );
+                root.appendChild(prev);
+
+                const info = document.createElement("span");
+                info.className = "muted";
+                info.textContent = `Halaman ${page} (menampilkan ${
+                    returnedCount || 0
+                })`;
+                root.appendChild(info);
+
+                const next = document.createElement("button");
+                next.type = "button";
+                next.textContent = "Next »";
+                next.disabled = returnedCount < pageSize;
+                next.addEventListener("click", () =>
+                    loadMasterProducts(page + 1, pageSize)
+                );
+                root.appendChild(next);
+
+                masterPagination.appendChild(root);
+            }
+
+            productForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                masterMsg.textContent = "";
+                const body = {
+                    product_code: p_code.value,
+                    product_name: p_name.value,
+                    price: Number(p_price.value),
+                    stock: Number(p_stock.value),
+                };
+                if (!body.product_code || !body.product_name) {
+                    masterMsg.textContent = "Kode & nama wajib";
+                    return;
+                }
+                if (editingProductId) {
+                    // update (API expects product_name, price, stock)
+                    const r = await apiFetch("/products/" + editingProductId, {
+                        method: "PUT",
+                        body: JSON.stringify({
+                            product_name: body.product_name,
+                            price: body.price,
+                            stock: body.stock,
+                        }),
+                    });
+                    if (!r.ok) {
+                        masterMsg.textContent =
+                            "Update gagal: " +
+                            (r.data && r.data.message
+                                ? r.data.message
+                                : r.status);
+                        return;
+                    }
+                    masterMsg.textContent = "Diperbarui";
+                } else {
+                    const r = await apiFetch("/products", {
+                        method: "POST",
+                        body: JSON.stringify(body),
+                    });
+                    if (!r.ok) {
+                        masterMsg.textContent =
+                            "Simpan gagal: " +
+                            (r.data && r.data.message
+                                ? r.data.message
+                                : r.status);
+                        return;
+                    }
+                    masterMsg.textContent = "Tersimpan";
+                }
+                // reset form
+                editingProductId = null;
+                p_code.disabled = false;
+                btnCancelEdit.style.display = "none";
+                productForm.reset();
+                // reload master table and full select
+                await loadMasterProducts(1, productPageSize);
+                await loadProductsForSelect();
+            });
+
+            btnCancelEdit.addEventListener("click", () => {
+                editingProductId = null;
+                p_code.disabled = false;
+                productForm.reset();
+                btnCancelEdit.style.display = "none";
+                masterMsg.textContent = "";
+            });
+
+            // --- Transaksi handlers ---
+            function formatToMySQLDate(date) {
+                const d = new Date(date);
+                const pad = (n) => String(n).padStart(2, "0");
+                return (
+                    d.getFullYear() +
+                    "-" +
+                    pad(d.getMonth() + 1) +
+                    "-" +
+                    pad(d.getDate()) +
+                    " " +
+                    pad(d.getHours()) +
+                    ":" +
+                    pad(d.getMinutes()) +
+                    ":" +
+                    pad(d.getSeconds())
+                );
+            }
+
+            t_product.addEventListener("change", () => {
+                transaksiMsg.textContent = "";
+                const sel = t_product.selectedOptions[0];
+                if (!sel || !sel.value) {
+                    t_price.value = "";
+                    t_qty.value = 1;
+                    t_subtotal.value = "";
+                    return;
+                }
+                t_price.value = sel.dataset.price || "";
+                t_qty.value = 1;
+                t_subtotal.value =
+                    Number(t_qty.value) * Number(t_price.value || 0);
+            });
+            t_qty.addEventListener("input", () => {
+                t_subtotal.value =
+                    Number(t_qty.value || 0) * Number(t_price.value || 0);
+            });
+            t_price.addEventListener("input", () => {
+                t_subtotal.value =
+                    Number(t_qty.value || 0) * Number(t_price.value || 0);
+            });
+
+            btnClearTransaksi.addEventListener("click", () => {
+                transaksiMsg.textContent = "";
+                if (transaksiForm) transaksiForm.reset();
+                t_subtotal.value = "";
+            });
+
+            if (transaksiForm)
+                transaksiForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    transaksiMsg.textContent = "";
+                    if (!token) {
+                        transaksiMsg.textContent = "Silakan login dahulu.";
+                        return;
+                    }
+                    const code = t_product.value;
+                    if (!code) {
+                        transaksiMsg.textContent = "Pilih produk";
+                        return;
+                    }
+                    const product = productsAll.find(
+                        (p) => p.product_code === code
+                    );
+                    if (!product) {
+                        transaksiMsg.textContent = "Produk tidak ditemukan";
+                        return;
+                    }
+                    const qty = Number(t_qty.value || 0);
+                    const price = Number(t_price.value || 0);
+                    if (!qty || qty <= 0) {
+                        transaksiMsg.textContent = "Quantity harus > 0";
+                        return;
+                    }
+                    if (qty > Number(product.stock)) {
+                        transaksiMsg.textContent =
+                            "Qty melebihi stok tersisa: " + product.stock;
+                        return;
+                    }
+                    // build body
+                    const body = {
+                        sales_reference: "SR-" + Date.now(),
+                        sales_date: formatToMySQLDate(new Date()),
+                        product_code: code,
+                        quantity: qty,
+                        price: price,
+                    };
+                    const r = await apiFetch("/sales", {
+                        method: "POST",
+                        body: JSON.stringify(body),
+                    });
+                    if (!r.ok) {
+                        transaksiMsg.textContent =
+                            "Gagal: " +
+                            (r.data && r.data.message
+                                ? r.data.message
+                                : r.status);
+                        return;
+                    }
+                    transaksiMsg.innerHTML =
+                        '<span class="success">Tersimpan. Ref: ' +
+                        body.sales_reference +
+                        "</span>";
+                    // refresh data
+                    await loadMasterProducts(
+                        currentProductPage,
+                        productPageSize
+                    );
+                    await loadTopProducts();
+                    await loadProductsForSelect();
+                });
+
+            // --- Sales list & edit + pagination ---
+            async function loadSales(
+                page = 1,
+                pageSize = defaultSalesPageSize
+            ) {
+                if (!salesTableBody) return;
+                currentSalesPage = Number(page) || 1;
+                salesPageSize = Number(pageSize) || defaultSalesPageSize;
+                salesTableBody.innerHTML =
+                    '<tr><td colspan="8">Memuat...</td></tr>';
+                // request API
+                const r = await apiFetch(
+                    `/sales?page=${currentSalesPage}&pageSize=${salesPageSize}`
+                );
+                if (!r.ok) {
+                    salesTableBody.innerHTML =
+                        '<tr><td colspan="8" class="muted">Gagal memuat: ' +
+                        (r.data && r.data.message ? r.data.message : r.status) +
+                        "</td></tr>";
+                    renderSimplePagination(
+                        null,
+                        currentSalesPage,
+                        salesPageSize
+                    );
+                    return;
+                }
+
+                // extract list and total (support multiple API shapes)
+                let list = [];
+                let total = null;
+                if (r.data) {
+                    if (Array.isArray(r.data)) {
+                        list = r.data;
+                    } else if (Array.isArray(r.data.data)) {
+                        list = r.data.data;
+                        if (typeof r.data.total === "number")
+                            total = r.data.total;
+                        if (
+                            r.data.meta &&
+                            typeof r.data.meta.total === "number"
+                        )
+                            total = r.data.meta.total;
+                        if (
+                            r.data.pagination &&
+                            typeof r.data.pagination.total === "number"
+                        )
+                            total = r.data.pagination.total;
+                    } else if (Array.isArray(r.data.result)) {
+                        list = r.data.result;
+                        if (typeof r.data.total === "number")
+                            total = r.data.total;
+                    } else if (r.data.data && Array.isArray(r.data.data.data)) {
+                        list = r.data.data.data;
+                        if (r.data.data.total) total = r.data.data.total;
+                    } else if (r.data.items && Array.isArray(r.data.items)) {
+                        list = r.data.items;
+                        if (typeof r.data.totalItems === "number")
+                            total = r.data.totalItems;
+                        if (typeof r.data.total === "number")
+                            total = r.data.total;
+                    } else {
+                        const arr = Object.values(r.data).find((v) =>
+                            Array.isArray(v)
+                        );
+                        if (arr) list = arr;
+                    }
+                }
+
+                // if page returns empty and page>1, try to load previous page (after deletion scenarios)
+                if ((!list || list.length === 0) && currentSalesPage > 1) {
+                    // try previous page
+                    await loadSales(currentSalesPage - 1, salesPageSize);
+                    return;
+                }
+
+                // store total if available
+                salesTotal = typeof total === "number" ? total : null;
+
+                renderSales(list || []);
+                if (salesTotal !== null) {
+                    renderPagination(
+                        salesTotal,
+                        currentSalesPage,
+                        salesPageSize
+                    );
+                } else {
+                    renderSimplePagination(
+                        list ? list.length : 0,
+                        currentSalesPage,
+                        salesPageSize
+                    );
+                }
+            }
+
+            function renderSales(list) {
+                if (!salesTableBody) return;
+                salesTableBody.innerHTML = "";
+                if (!list || list.length === 0) {
+                    salesTableBody.innerHTML =
+                        '<tr><td colspan="8" class="muted">Tidak ada data</td></tr>';
+                    return;
+                }
+                for (const row of list) {
+                    // prefer stored subtotal, otherwise compute
+                    const subtotal =
+                        typeof row.subtotal !== "undefined"
+                            ? Number(row.subtotal)
+                            : Number(row.price || 0) *
+                              Number(row.quantity || 0);
+                    const id = row.id_sales || row.id || "";
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${id}</td><td>${
+                        row.sales_reference || ""
+                    }</td><td>${humanDate(
+                        row.sales_date || row.in_sales_date || ""
+                    )}</td><td>${row.product_code || ""}</td><td>${
+                        row.quantity || 0
+                    }</td><td>Rp ${fmt(row.price || 0)}</td><td>Rp ${fmt(
+                        subtotal
+                    )}</td><td><button data-id="${id}" class="bg-green-500 text-white rounded px-3 py-1  editSale">Edit</button> <button data-id="${id}" class="bg-red-500 text-white rounded px-3 py-1 delSale">Hapus</button></td>`;
+                    salesTableBody.appendChild(tr);
+                }
+                // attach handlers
+                salesTableBody.querySelectorAll(".editSale").forEach((btn) => {
+                    btn.addEventListener("click", async () => {
+                        const id = btn.getAttribute("data-id");
+                        const r = await apiFetch("/sales/" + id);
+                        if (!r.ok) {
+                            salesMsg.textContent =
+                                "Gagal ambil data: " +
+                                (r.data && r.data.message
+                                    ? r.data.message
+                                    : r.status);
+                            return;
+                        }
+                        const data = r.data;
+                        s_id.value = data.id_sales || data.id || "";
+                        s_ref.value = data.sales_reference || "";
+                        function toLocalInput(dt) {
+                            if (!dt) return "";
+                            const parts = dt.split(/[- :T]/);
+                            if (parts.length < 6)
+                                return dt.replace(" ", "T").slice(0, 16);
+                            const [Y, M, D, h, m, s] = parts;
+                            return `${Y}-${M}-${D}T${h}:${m}`;
+                        }
+                        s_date.value = toLocalInput(
+                            data.sales_date || data.in_sales_date || ""
+                        );
+                        s_product.value = data.product_code || "";
+                        s_qty.value = data.quantity || 0;
+                        s_price.value = data.price || 0;
+                        salesMsg.textContent = "";
+                        sectionSales.scrollIntoView({ behavior: "smooth" });
+                    });
+                });
+                salesTableBody.querySelectorAll(".delSale").forEach((btn) => {
+                    btn.addEventListener("click", async () => {
+                        const id = btn.getAttribute("data-id");
+                        if (!confirm("Hapus sale ID " + id + " ?")) return;
+                        const r = await apiFetch("/sales/" + id, {
+                            method: "DELETE",
+                        });
+                        if (!r.ok) {
+                            alert(
+                                "Hapus gagal: " +
+                                    (r.data && r.data.message
+                                        ? r.data.message
+                                        : r.status)
+                            );
+                            return;
+                        }
+                        // reload current page (loadSales will adjust page if needed)
+                        await loadSales(currentSalesPage, salesPageSize);
+                        await loadTopProducts();
+                    });
+                });
+            }
+
+            function renderPagination(total, page, pageSize) {
+                if (!salesPagination) return;
+                salesPagination.innerHTML = "";
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                const root = document.createElement("div");
+                root.className = "pagination";
+
+                const makeBtn = (
+                    label,
+                    p,
+                    disabled = false,
+                    extraClass = ""
+                ) => {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.textContent = label;
+                    if (disabled) b.disabled = true;
+                    if (extraClass) b.classList.add(extraClass);
+                    b.addEventListener("click", () => {
+                        loadSales(p, pageSize);
+                    });
+                    return b;
+                };
+
+                // Prev
+                root.appendChild(
+                    makeBtn("« Prev", Math.max(1, page - 1), page === 1)
+                );
+
+                // If few pages, render all; otherwise render window
+                if (totalPages <= 10) {
+                    for (let i = 1; i <= totalPages; i++) {
+                        const btn = makeBtn(
+                            String(i),
+                            i,
+                            false,
+                            i === page ? "active" : ""
+                        );
+                        if (i === page) btn.classList.add("active");
+                        root.appendChild(btn);
+                    }
+                } else {
+                    // first
+                    root.appendChild(
+                        makeBtn("1", 1, false, page === 1 ? "active" : "")
+                    );
+                    if (page > 4) {
+                        const dots = document.createElement("span");
+                        dots.textContent = "...";
+                        root.appendChild(dots);
+                    }
+                    // window around current page
+                    const start = Math.max(2, page - 2);
+                    const end = Math.min(totalPages - 1, page + 2);
+                    for (let i = start; i <= end; i++) {
+                        const btn = makeBtn(
+                            String(i),
+                            i,
+                            false,
+                            i === page ? "active" : ""
+                        );
+                        if (i === page) btn.classList.add("active");
+                        root.appendChild(btn);
+                    }
+                    if (page < totalPages - 3) {
+                        const dots2 = document.createElement("span");
+                        dots2.textContent = "...";
+                        root.appendChild(dots2);
+                    }
+                    // last
+                    root.appendChild(
+                        makeBtn(
+                            String(totalPages),
+                            totalPages,
+                            false,
+                            page === totalPages ? "active" : ""
+                        )
+                    );
+                }
+
+                // Next
+                root.appendChild(
+                    makeBtn(
+                        "Next »",
+                        Math.min(totalPages, page + 1),
+                        page === totalPages
+                    )
+                );
+
+                // info
+                const info = document.createElement("span");
+                info.className = "muted";
+                info.style.marginLeft = "10px";
+                info.textContent = `Halaman ${page} dari ${totalPages} — total ${total} item`;
+                salesPagination.appendChild(root);
+                salesPagination.appendChild(info);
+            }
+
+            function renderSimplePagination(returnedCount, page, pageSize) {
+                if (!salesPagination) return;
+                salesPagination.innerHTML = "";
+                const root = document.createElement("div");
+                root.className = "pagination";
+                const prev = document.createElement("button");
+                prev.type = "button";
+                prev.textContent = "« Prev";
+                prev.disabled = page <= 1;
+                prev.addEventListener("click", () =>
+                    loadSales(Math.max(1, page - 1), pageSize)
+                );
+                root.appendChild(prev);
+
+                const info = document.createElement("span");
+                info.className = "muted";
+                info.textContent = `Halaman ${page} (menampilkan ${
+                    returnedCount || 0
+                })`;
+                root.appendChild(info);
+
+                const next = document.createElement("button");
+                next.type = "button";
+                next.textContent = "Next »";
+                // if returnedCount < pageSize then probably last page
+                next.disabled = returnedCount < pageSize;
+                next.addEventListener("click", () =>
+                    loadSales(page + 1, pageSize)
+                );
+                root.appendChild(next);
+
+                salesPagination.appendChild(root);
+            }
+
+            // --- Init ---
+            (function init() {
+                // apply Tailwind utility classes to the existing DOM (for quick demo styling)
+                try {
+                    applyTailwindClasses();
+                } catch (e) {
+                    /* ignore */
+                }
+                if (token) setAuth(token);
+                // default show
+                showSection("dashboard");
+                if (token) loadAll();
+            })();
+        </script>
+    </body>
+</html>
