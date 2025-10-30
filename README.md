@@ -1,6 +1,6 @@
 ## Test-Backend
 
-Repository ini berisi contoh aplikasi backend sederhana (Node.js/Express) beserta frontend statis dan beberapa contoh skrip PHP.
+Repository ini berisi aplikasi backend sederhana (Node.js/Express) beserta frontend statis dan beberapa skrip PHP untuk keperluan Test Backend Web Programmer.
 
 Deskripsi singkat
 
