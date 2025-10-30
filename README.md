@@ -5,8 +5,8 @@ Repository ini berisi contoh aplikasi backend sederhana (Node.js/Express) besert
 Deskripsi singkat
 
 - Backend: aplikasi Express sederhana untuk manajemen produk dan penjualan.
-- Frontend: file statis `frontend/index.html` (demo/entry point sederhana).
-- PHP: folder `PHP/` berisi beberapa skrip dan contoh file latihan.
+- Frontend: file statis `frontend/index.html`.
+- PHP: folder `PHP/` berisi beberapa skrip php.
 
 Struktur proyek
 
@@ -17,7 +17,7 @@ Struktur proyek
   - `middleware/auth.js` - middleware otentikasi JWT
   - `product_sales.sql` - contoh SQL untuk data/struktur
 - `frontend/` - file frontend statis
-- `PHP/` - contoh skrip PHP dan data latihan
+- `PHP/` - skrip PHP dan data
 
 Prasyarat
 
@@ -83,13 +83,6 @@ File penting
 - `backend/package.json` - daftar dependency dan script (start: `node app.js`)
 - `backend/db.js` - konfigurasi DB
 
-Lisensi
-
-Project ini tidak menyertakan lisensi spesifik. Jika ingin dipublikasikan, pertimbangkan menambahkan `LICENSE` (contoh: MIT).
-
-Kontak / Catatan
-
-Jika butuh tambahan dokumentasi endpoint (contoh payload, respons, atau Postman collection), beri tahu saya dan saya akan tambahkan.
 
 ---
 
